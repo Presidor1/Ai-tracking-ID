@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-success">📊 Analysis Dashboard</h2>
+    <p>Here you can view your past uploads and results.</p>
+
+    {% if history %}
+        <table class="table table-bordered table-hover mt-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Filename</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in history %}
+                <tr>
+                    <td>{{ item.filename }}</td>
+                    <td>{{ item.type }}</td>
+                    <td>{{ item.date }}</td>
+                    <td>
+                        <a href="{{ url_for('routes.view_result', id=item.id) }}" class="btn btn-sm btn-primary">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="mt-3 text-muted">No analysis history available.</p>
+    {% endif %}
+</div>
+{% endblock %}
