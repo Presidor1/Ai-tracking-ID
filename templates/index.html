@@ -1,77 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ID Tracking AI</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f7fa;
-            text-align: center;
-            margin: 0;
-            padding: 40px;
-        }
-        h1 {
-            color: #333;
-        }
-        form {
-            margin: 20px auto;
-            padding: 20px;
-            border: 2px dashed #888;
-            border-radius: 8px;
-            background: #fff;
-            max-width: 400px;
-        }
-        input[type="file"] {
-            margin: 15px 0;
-        }
-        button {
-            padding: 10px 20px;
-            background: #007BFF;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .response {
-            margin-top: 20px;
-            font-size: 14px;
-            color: green;
-        }
-    </style>
-</head>
-<body>
-    <h1>📷 ID Tracking AI</h1>
-    <p>Upload an ID image to detect its type and dimensions.</p>
-    
-    <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" name="file" accept="image/*" required>
-        <br>
-        <button type="submit">Upload</button>
-    </form>
+{% extends "base.html" %}
 
-    <div class="response" id="response"></div>
+{% block content %}
+  <h1 class="h3 mb-3 text-center">📷 ID Tracking AI</h1>
+  <p class="text-muted text-center">Upload an ID image to detect its type and dimensions.</p>
 
-    <script>
-        const form = document.getElementById('uploadForm');
-        const responseDiv = document.getElementById('response');
+  <form id="uploadForm" class="card p-4 shadow-sm mx-auto" style="max-width: 450px;" enctype="multipart/form-data">
+    <input class="form-control mb-3" type="file" name="file" accept="image/*" required>
+    <button class="btn btn-primary w-100" type="submit">Upload</button>
+  </form>
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(form);
+  <pre class="response mt-4 text-success" id="response"></pre>
 
-            const res = await fetch('/upload', {
-                method: 'POST',
-                body: formData
-            });
+  <script>
+    const form = document.getElementById('uploadForm');
+    const responseDiv = document.getElementById('response');
 
-            const data = await res.json();
-            responseDiv.textContent = JSON.stringify(data, null, 2);
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      responseDiv.textContent = '⏳ Uploading...';
+
+      const formData = new FormData(form);
+
+      try {
+        const res = await fetch('/upload', {
+          method: 'POST',
+          body: formData
         });
-    </script>
-</body>
-</html>
+
+        const data = await res.json();
+        responseDiv.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        responseDiv.textContent = '❌ Error: ' + err.message;
+      }
+    });
+  </script>
+{% endblock %}
