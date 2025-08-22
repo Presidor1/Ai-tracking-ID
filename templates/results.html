@@ -2,25 +2,40 @@
 
 {% block content %}
 <div class="card shadow p-4">
-    <h3 class="mb-3">Analysis Results</h3>
+    <h3 class="mb-3 text-primary">📊 Analysis Results</h3>
     
-    <p><strong>Filename:</strong> {{ result.filename }}</p>
-    <p><strong>File Type:</strong> {{ result.type }}</p>
+    <ul class="list-group list-group-flush">
+        <li class="list-group-item"><strong>Filename:</strong> {{ result.filename }}</li>
+        <li class="list-group-item"><strong>File Type:</strong> {{ result.type }}</li>
 
-    {% if result.dimensions %}
-        <p><strong>Dimensions:</strong> {{ result.dimensions }}</p>
-    {% endif %}
+        {% if result.dimensions %}
+        <li class="list-group-item"><strong>Dimensions:</strong> {{ result.dimensions }}</li>
+        {% endif %}
 
-    {% if result.text %}
-        <p><strong>Extracted Text:</strong> {{ result.text }}</p>
-    {% endif %}
+        {% if result.text %}
+        <li class="list-group-item"><strong>Extracted Text:</strong> <code>{{ result.text }}</code></li>
+        {% endif %}
 
-    {% if result.objects %}
-        <p><strong>Detected Objects:</strong> {{ result.objects }}</p>
+        {% if result.objects %}
+        <li class="list-group-item"><strong>Detected Objects:</strong> 
+            <span class="badge bg-info text-dark">{{ result.objects }}</span>
+        </li>
+        {% endif %}
+    </ul>
+
+    <!-- Show uploaded image -->
+    {% if result.image_url %}
+    <div class="mt-4 text-center">
+        <h5>🖼 Uploaded Image</h5>
+        <img src="{{ result.image_url }}" alt="Uploaded ID" class="img-fluid rounded shadow" style="max-height:300px;">
+    </div>
     {% endif %}
 
     <!-- Map placeholder -->
-    <div id="map" style="height:400px;" class="mt-3"></div>
+    <div class="mt-4">
+        <h5>🗺 Possible Location</h5>
+        <div id="map" style="height:400px; border-radius: 8px; overflow: hidden;"></div>
+    </div>
 </div>
 
 <!-- Leaflet.js for map -->
@@ -29,15 +44,21 @@
 
 <script>
     // Initialize Leaflet map
-    var map = L.map('map').setView([9.05785, 7.49508], 6); // Default Nigeria view
+    var map = L.map('map').setView([{{ result.lat|default(9.05785) }}, {{ result.lng|default(7.49508) }}], 6);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Example marker (replace with backend coords later)
-    L.marker([9.05785, 7.49508]).addTo(map)
-        .bindPopup("Possible location detected")
-        .openPopup();
+    // Add marker if coordinates available
+    {% if result.lat and result.lng %}
+        L.marker([{{ result.lat }}, {{ result.lng }}]).addTo(map)
+            .bindPopup("📍 Detected Location")
+            .openPopup();
+    {% else %}
+        L.marker([9.05785, 7.49508]).addTo(map)
+            .bindPopup("Default Nigeria View")
+            .openPopup();
+    {% endif %}
 </script>
 {% endblock %}
