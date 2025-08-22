@@ -1,25 +1,57 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5" style="max-width: 400px;">
-    <h2 class="text-center text-success">📝 Register</h2>
-    <form method="POST" action="{{ url_for('routes.register') }}">
-        <div class="mb-3">
-            <label>Full Name</label>
-            <input type="text" name="name" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label>Email</label>
-            <input type="email" name="email" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label>Password</label>
-            <input type="password" name="password" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Register</button>
-        <p class="text-center mt-3">
-            Already have an account? <a href="{{ url_for('routes.login') }}">Login</a>
-        </p>
-    </form>
+<div class="container mt-5" style="max-width: 420px;">
+    <div class="card shadow p-4">
+        <h2 class="text-center text-success mb-4">📝 Create Account</h2>
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Registration form -->
+        <form method="POST" action="{{ url_for('routes.register') }}">
+            <div class="mb-3">
+                <label for="name" class="form-label">👤 Full Name</label>
+                <input id="name" type="text" name="name" class="form-control" placeholder="Enter your full name" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">📧 Email</label>
+                <input id="email" type="email" name="email" class="form-control" placeholder="Enter your email" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">🔑 Password</label>
+                <input id="password" type="password" name="password" class="form-control" placeholder="Create a password" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="confirm_password" class="form-label">🔒 Confirm Password</label>
+                <input id="confirm_password" type="password" name="confirm_password" class="form-control" placeholder="Confirm password" required>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" class="form-check-input" id="terms" required>
+                <label class="form-check-label" for="terms">
+                    I agree to the <a href="#" class="text-decoration-none">Terms & Conditions</a>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Register</button>
+
+            <p class="text-center mt-3 mb-0">
+                Already have an account? <a href="{{ url_for('routes.login') }}" class="text-decoration-none">Login</a>
+            </p>
+        </form>
+    </div>
 </div>
 {% endblock %}
