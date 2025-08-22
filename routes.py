@@ -1,33 +1,77 @@
 import os
-from flask import Blueprint, request, jsonify
+import filetype
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from werkzeug.utils import secure_filename
-from utils import extract_exif, detect_file_type, run_ocr
-from config import Config
+from PIL import Image
 
 routes = Blueprint("routes", __name__)
 
+# Upload configuration
+UPLOAD_FOLDER = os.path.join("static", "uploads")
+ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
+
+# Ensure upload folder exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+def allowed_file(filename):
+    """Check allowed file extensions."""
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+@routes.route("/", methods=["GET"])
+def home():
+    """Landing page with upload form."""
+    return render_template("index.html")
+
+
 @routes.route("/upload", methods=["POST"])
 def upload_file():
+    """Handle file uploads and redirect to results page."""
     if "file" not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+        flash("❌ No file uploaded")
+        return redirect(url_for("routes.home"))
 
     file = request.files["file"]
+
     if file.filename == "":
-        return jsonify({"error": "Empty filename"}), 400
+        flash("❌ Empty filename")
+        return redirect(url_for("routes.home"))
 
-    filename = secure_filename(file.filename)
-    filepath = os.path.join(Config.UPLOAD_FOLDER, filename)
-    os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
-    file.save(filepath)
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
 
-    # Run analysis
-    file_type = detect_file_type(filepath)
-    exif = extract_exif(filepath)
-    ocr_text = run_ocr(filepath) if "image" in file_type else ""
+        # Detect file type
+        kind = filetype.guess(filepath)
+        file_type = kind.mime if kind else "Unknown"
 
-    return jsonify({
-        "filename": filename,
-        "type": file_type,
-        "exif": exif,
-        "ocr_text": ocr_text
-    })
+        # Extract image dimensions
+        dimensions = None
+        try:
+            img = Image.open(filepath)
+            width, height = img.size
+            dimensions = f"{width}x{height}"
+        except Exception:
+            pass
+
+        # Placeholder for OCR / Object detection
+        extracted_text = "Detected text placeholder (OCR to be added)"
+        detected_objects = "Objects placeholder (YOLO/ML model to be added)"
+
+        # Package results
+        result = {
+            "filename": filename,
+            "type": file_type,
+            "dimensions": dimensions,
+            "text": extracted_text,
+            "objects": detected_objects,
+            "filepath": filepath,
+        }
+
+        return render_template("results.html", result=result)
+
+    else:
+        flash("❌ Invalid file type. Please upload an image.")
+        return redirect(url_for("routes.home"))
