@@ -2,17 +2,32 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="text-primary">ℹ About This Project</h2>
-    <p>
-        <strong>ID Tracking AI</strong> (Kidnap/Banditry Geolocation Project) 
-        is an AI-powered tool designed to analyze uploaded images and provide 
-        intelligence for tracking and geolocation. 
-    </p>
-    <ul>
-        <li>📷 Upload and analyze ID images</li>
-        <li>🌍 Extract text, objects, and possible locations</li>
-        <li>🗺 Display results on interactive maps</li>
-        <li>🔐 Secure and intended for authorized use only</li>
-    </ul>
+    <div class="card shadow-sm p-4">
+        <h2 class="text-primary mb-3">ℹ About This Project</h2>
+        <p class="lead">
+            <strong>ID Tracking AI</strong> (Kidnap/Banditry Geolocation Project) 
+            is an AI-powered platform that analyzes uploaded images to extract 
+            intelligence for identification, tracking, and potential geolocation.
+        </p>
+
+        <h5 class="mt-4">✨ Key Features</h5>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">📷 Upload and analyze ID images</li>
+            <li class="list-group-item">🌍 Extract text, objects, and patterns</li>
+            <li class="list-group-item">🗺 Display results on interactive maps</li>
+            <li class="list-group-item">🤖 Powered by AI (OCR, Object Detection, ML)</li>
+            <li class="list-group-item">🔐 Secure and intended for authorized use only</li>
+        </ul>
+
+        <div class="alert alert-warning mt-4" role="alert">
+            <strong>⚠ Disclaimer:</strong> This project is developed strictly for 
+            <em>research, safety, and authorized security purposes</em>.  
+            It must <u>not</u> be misused for unlawful surveillance or harm.
+        </div>
+
+        <p class="mt-3 text-muted">
+            Built with ❤️ using Flask, YOLOv8, Tesseract OCR, and Leaflet.js maps.
+        </p>
+    </div>
 </div>
 {% endblock %}
