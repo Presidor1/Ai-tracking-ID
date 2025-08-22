@@ -1,0 +1,25 @@
+# === CORE (required) ===
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-WTF==1.1.1
+python-dotenv==1.0.0
+argon2-cffi==21.3.0
+gunicorn==21.2.0
+psycopg2-binary==2.9.9
+Pillow==10.1.0
+filetype==1.2.0
+opencv-python==4.8.0.74
+requests==2.31.0
+
+# === OPTIONAL / HEAVY ML & AI (install later if needed) ===
+# torch
+# torchvision
+# ultralytics==8.0.130
+# faiss-cpu==1.7.4
+# transformers==4.35.2
+# sentence-transformers==2.2.2
+# pytesseract==0.3.11
+# geopandas==0.12.2
+# rasterio
+# boto3
