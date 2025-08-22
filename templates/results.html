@@ -17,17 +17,34 @@
         {% endif %}
 
         {% if result.objects %}
-        <li class="list-group-item"><strong>Detected Objects:</strong> 
-            <span class="badge bg-info text-dark">{{ result.objects }}</span>
+        <li class="list-group-item">
+            <strong>Detected Objects:</strong> 
+            <ul class="mt-2">
+                {% for obj in result.objects %}
+                    <li>
+                        <span class="badge bg-info text-dark">
+                            {{ obj.name }} ({{ obj.confidence }}%)
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
         </li>
         {% endif %}
     </ul>
 
     <!-- Show uploaded image -->
-    {% if result.image_url %}
+    {% if result.filepath %}
     <div class="mt-4 text-center">
         <h5>🖼 Uploaded Image</h5>
-        <img src="{{ result.image_url }}" alt="Uploaded ID" class="img-fluid rounded shadow" style="max-height:300px;">
+        <img src="/{{ result.filepath }}" alt="Uploaded ID" class="img-fluid rounded shadow" style="max-height:300px;">
+    </div>
+    {% endif %}
+
+    <!-- Show YOLO annotated preview -->
+    {% if result.preview_url %}
+    <div class="mt-4 text-center">
+        <h5>🔍 Detection Preview</h5>
+        <img src="{{ result.preview_url }}" alt="Detection Preview" class="img-fluid rounded shadow" style="max-height:400px;">
     </div>
     {% endif %}
 
