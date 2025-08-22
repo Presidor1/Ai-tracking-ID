@@ -1,6 +1,7 @@
 import os
 import filetype
 from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
@@ -17,32 +18,37 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
-# Load YOLOv8 model
+# Load YOLOv8 model (tiny version for speed)
 yolo_model = YOLO("yolov8n.pt")
 
-
+# ==========================
+# Utility Functions
+# ==========================
 def allowed_file(filename):
     """Check allowed file extensions."""
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+# ==========================
+# Core Routes
+# ==========================
 @routes.route("/", methods=["GET"])
 def home():
     """Landing page with upload form."""
-    return render_template("index.html")
+    return render_template("index.html", title="Home")
 
 
 @routes.route("/upload", methods=["POST"])
 def upload_file():
-    """Handle file uploads and redirect to results page."""
+    """Handle file uploads and run analysis pipeline."""
     if "file" not in request.files:
-        flash("❌ No file uploaded")
+        flash("❌ No file uploaded", "danger")
         return redirect(url_for("routes.home"))
 
     file = request.files["file"]
 
     if file.filename == "":
-        flash("❌ Empty filename")
+        flash("❌ Empty filename", "danger")
         return redirect(url_for("routes.home"))
 
     if file and allowed_file(file.filename):
@@ -54,7 +60,7 @@ def upload_file():
         kind = filetype.guess(filepath)
         file_type = kind.mime if kind else "Unknown"
 
-        # Extract image dimensions
+        # Image dimensions
         dimensions = None
         try:
             img = Image.open(filepath)
@@ -73,7 +79,7 @@ def upload_file():
 
         # === YOLO Object Detection ===
         detected_objects = []
-        preview_path = None
+        preview_url = None
         try:
             results = yolo_model(filepath)  # Run YOLO
             for r in results:
@@ -82,14 +88,13 @@ def upload_file():
                     cls_name = yolo_model.names[cls_id]
                     detected_objects.append(cls_name)
 
-            # Save annotated preview image
+            # Save annotated preview
             preview_filename = f"preview_{filename}"
             preview_path = os.path.join(RESULTS_FOLDER, preview_filename)
-            results[0].save(filename=preview_path)  # YOLO saves with boxes
-            preview_url = f"/{preview_path}"  # URL for Flask template
+            results[0].save(filename=preview_path)
+            preview_url = f"/{preview_path}"
         except Exception as e:
             detected_objects = [f"YOLO Error: {str(e)}"]
-            preview_url = None
 
         # Package results
         result = {
@@ -98,12 +103,65 @@ def upload_file():
             "dimensions": dimensions,
             "text": extracted_text.strip(),
             "objects": ", ".join(set(detected_objects)) if detected_objects else "None",
-            "filepath": filepath,
+            "image_url": f"/{filepath}",
             "preview_url": preview_url,
+            "lat": 9.05785,   # Default coords (can be replaced by AI inference later)
+            "lng": 7.49508
         }
 
         return render_template("results.html", result=result)
 
     else:
-        flash("❌ Invalid file type. Please upload an image.")
+        flash("❌ Invalid file type. Please upload an image.", "danger")
         return redirect(url_for("routes.home"))
+
+
+# ==========================
+# Extra Pages
+# ==========================
+@routes.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html", title="Dashboard")
+
+
+@routes.route("/about")
+def about():
+    return render_template("about.html", title="About")
+
+
+# ==========================
+# Authentication (placeholder)
+# ==========================
+@routes.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        # TODO: Replace with real DB check
+        flash("⚠️ Login system not implemented yet.", "warning")
+        return redirect(url_for("routes.login"))
+
+    return render_template("login.html", title="Login")
+
+
+@routes.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        email = request.form.get("email")
+        password = request.form.get("password")
+
+        # TODO: Replace with real DB save
+        flash("⚠️ Registration not implemented yet.", "warning")
+        return redirect(url_for("routes.register"))
+
+    return render_template("register.html", title="Register")
+
+
+@routes.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("✅ Logged out successfully.", "info")
+    return redirect(url_for("routes.home"))
