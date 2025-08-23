@@ -1,42 +1,37 @@
-# ----------------------------
-# Use slim Python image
-# ----------------------------
 FROM python:3.11-slim
 
-# ----------------------------
-# Set working directory
-# ----------------------------
-WORKDIR /app
+# Avoid interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
 
-# ----------------------------
-# Install system dependencies
-# ----------------------------
+# Install system dependencies in one layer
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-osd \
     libtesseract-dev \
+    libleptonica-dev \
+    pkg-config \
     libjpeg-dev \
-    zlib1g-dev \
     libpng-dev \
-    build-essential \
+    libtiff-dev \
+    zlib1g-dev \
+    libicu-dev \
+    libpango1.0-dev \
+    libcairo2-dev \
+    libcurl4-openssl-dev \
+    git \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# ----------------------------
+# Set working directory
+WORKDIR /app
+
 # Copy and install Python dependencies
-# ----------------------------
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ----------------------------
 # Copy application code
-# ----------------------------
 COPY . .
 
-# ----------------------------
-# Expose port (Flask default)
-# ----------------------------
-EXPOSE 5000
-
-# ----------------------------
-# Use gunicorn for production
-# ----------------------------
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app", "--workers", "3", "--threads", "2", "--timeout", "120"]
+# Default command
+CMD ["python", "app.py"]
