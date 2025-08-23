@@ -1,17 +1,20 @@
 import os
 import filetype
+from datetime import datetime
 from flask import (
     Blueprint, render_template, request, redirect,
     url_for, flash
 )
 from flask_login import (
     login_user, logout_user, login_required,
-    current_user, UserMixin
+    current_user
 )
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
 from ultralytics import YOLO
+
+from models import db, User, Analysis  # import your models
 
 routes = Blueprint("routes", __name__)
 
@@ -45,6 +48,7 @@ def index():
 
 
 @routes.route("/upload", methods=["POST"])
+@login_required
 def upload_file():
     """Handle file uploads and run analysis pipeline."""
     if "file" not in request.files:
@@ -102,24 +106,51 @@ def upload_file():
         except Exception as e:
             detected_objects = [f"YOLO Error: {str(e)}"]
 
-        # Package results
-        result = {
-            "filename": filename,
-            "type": file_type,
-            "dimensions": dimensions,
-            "text": extracted_text.strip(),
-            "objects": ", ".join(set(detected_objects)) if detected_objects else "None",
-            "image_url": f"/{filepath}",
-            "preview_url": preview_url,
-            "lat": 9.05785,   # Default coords (AI inference will replace later)
-            "lng": 7.49508
-        }
+        # === Save analysis to DB ===
+        analysis = Analysis(
+            user_id=current_user.id,
+            filename=filename,
+            file_type=file_type,
+            dimensions=dimensions,
+            extracted_text=extracted_text.strip(),
+            detected_objects=", ".join(set(detected_objects)) if detected_objects else "None",
+            image_url=f"/{filepath}",
+            preview_url=preview_url,
+            lat=9.05785,  # Placeholder coords
+            lng=7.49508,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(analysis)
+        db.session.commit()
 
-        return render_template("results.html", result=result)
+        return redirect(url_for("routes.view_result", id=analysis.id))
 
     else:
         flash("❌ Invalid file type. Please upload an image.", "danger")
         return redirect(url_for("routes.index"))
+
+
+@routes.route("/results/<int:id>")
+@login_required
+def view_result(id):
+    """View a single analysis result by ID."""
+    analysis = Analysis.query.get_or_404(id)
+    if analysis.user_id != current_user.id:
+        flash("🚫 Unauthorized access.", "danger")
+        return redirect(url_for("routes.dashboard"))
+
+    result = {
+        "filename": analysis.filename,
+        "type": analysis.file_type,
+        "dimensions": analysis.dimensions,
+        "text": analysis.extracted_text,
+        "objects": analysis.detected_objects,
+        "image_url": analysis.image_url,
+        "preview_url": analysis.preview_url,
+        "lat": analysis.lat,
+        "lng": analysis.lng,
+    }
+    return render_template("results.html", result=result)
 
 
 # ==========================
@@ -128,7 +159,9 @@ def upload_file():
 @routes.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", title="Dashboard")
+    """Show user’s analysis history."""
+    history = Analysis.query.filter_by(user_id=current_user.id).order_by(Analysis.created_at.desc()).all()
+    return render_template("dashboard.html", title="Dashboard", history=history)
 
 
 @routes.route("/about")
@@ -137,7 +170,7 @@ def about():
 
 
 # ==========================
-# Authentication (basic stubs)
+# Authentication
 # ==========================
 @routes.route("/login", methods=["GET", "POST"])
 def login():
@@ -145,11 +178,9 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # Placeholder: replace with DB check
-        if email == "test@test.com" and password == "password":
-            fake_user = UserMixin()
-            fake_user.id = 1
-            login_user(fake_user)
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            login_user(user)
             flash("✅ Logged in successfully.", "success")
             return redirect(url_for("routes.dashboard"))
         else:
@@ -161,12 +192,19 @@ def login():
 @routes.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
+        name = request.form.get("name")
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # Placeholder: save to DB later
-        flash("⚠️ Registration system not implemented yet.", "warning")
-        return redirect(url_for("routes.register"))
+        if User.query.filter_by(email=email).first():
+            flash("⚠️ Email already registered.", "warning")
+        else:
+            user = User(name=name, email=email)
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            flash("✅ Registration successful. Please log in.", "success")
+            return redirect(url_for("routes.login"))
 
     return render_template("register.html", title="Register")
 
