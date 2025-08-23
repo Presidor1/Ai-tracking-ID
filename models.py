@@ -18,6 +18,10 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), default="user")  # "user" or "admin"
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Relationships
+    analyses = db.relationship("Analysis", back_populates="user", cascade="all, delete-orphan")
+    audit_logs = db.relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
+
     # Password helpers
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -55,7 +59,7 @@ class Analysis(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationship
-    user = db.relationship("User", backref="analyses")
+    user = db.relationship("User", back_populates="analyses")
 
     def __repr__(self):
         return f"<Analysis {self.filename} ({self.status}, {self.confidence:.2f})>"
@@ -74,7 +78,7 @@ class AuditLog(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationship
-    user = db.relationship("User", backref="audit_logs")
+    user = db.relationship("User", back_populates="audit_logs")
 
     def __repr__(self):
         return f"<AuditLog User={self.user_id} Action={self.action}>"
