@@ -1,10 +1,10 @@
 import os
-from flask import Flask
+from flask import Flask, render_template
 from config import Config
 from routes import routes
 from models import db, User
 from flask_migrate import Migrate
-from flask_login import LoginManager
+from flask_login import LoginManager, current_user
 
 # =========================
 # Initialize Flask
@@ -28,7 +28,7 @@ migrate = Migrate(app, db)
 # Flask-Login Manager
 # =========================
 login_manager = LoginManager()
-login_manager.login_view = "routes.login"  # redirect to login page if unauthorized
+login_manager.login_view = "routes.login"  # where to redirect unauthorized users
 login_manager.init_app(app)
 
 @login_manager.user_loader
@@ -42,11 +42,20 @@ def load_user(user_id):
 app.register_blueprint(routes)
 
 # =========================
-# Root endpoint
+# Root + Error Pages
 # =========================
 @app.route("/")
 def index():
-    return "✅ Kidnap/Banditry Geolocation AI is running with DB + Auth + Migrations!"
+    """Landing page redirect to upload form"""
+    return render_template("index.html", title="Kidnap/Banditry Geolocation AI", user=current_user)
+
+@app.errorhandler(404)
+def not_found(error):
+    return render_template("error.html", message="Page not found"), 404
+
+@app.errorhandler(500)
+def server_error(error):
+    return render_template("error.html", message="Internal server error"), 500
 
 # =========================
 # Entry point
