@@ -1,44 +1,27 @@
+# Use Python 3.11 slim image
 FROM python:3.11-slim
 
-# Avoid interactive prompts during package installation
-ENV DEBIAN_FRONTEND=noninteractive
-
 # Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     tesseract-ocr \
-    tesseract-ocr-eng \
-    tesseract-ocr-osd \
     libtesseract-dev \
-    libleptonica-dev \
-    pkg-config \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
-    zlib1g-dev \
-    libicu-dev \
-    libpango1.0-dev \
-    libcairo2-dev \
-    libcurl4-openssl-dev \
-    git \
-    build-essential \
-    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Upgrade pip
-RUN pip install --upgrade pip setuptools wheel
-
-# Copy and install Python dependencies
+# Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefer-binary -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
+# Install YOLO (ultralytics) and torch
+RUN pip install --no-cache-dir ultralytics torch torchvision
+
+# Copy the rest of the app
 COPY . .
 
-# Expose port
+# Expose port (Render default)
 EXPOSE 5000
 
-# Use gunicorn to run the app in production
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
+# Start the app with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
