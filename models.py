@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), default="user")  # "user" or "admin"
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Password helpers
@@ -23,6 +24,9 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def is_admin(self):
+        return self.role == "admin"
 
 
 # =========================
@@ -40,9 +44,28 @@ class Analysis(db.Model):
     detected_objects = db.Column(db.Text)
     image_url = db.Column(db.String(250))
     preview_url = db.Column(db.String(250))
-    lat = db.Column(db.Float)   # optional: predicted latitude
-    lng = db.Column(db.Float)   # optional: predicted longitude
+    lat = db.Column(db.Float)   # Predicted latitude
+    lng = db.Column(db.Float)   # Predicted longitude
+    confidence = db.Column(db.Float, default=0.0)  # AI confidence score (0–1)
+    method_used = db.Column(db.String(50))  # e.g., "YOLO+OCR+CLIP"
+    status = db.Column(db.String(20), default="pending")  # pending/completed/failed
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationship
     user = db.relationship("User", backref="analyses")
+
+
+# =========================
+# Audit Log Model
+# =========================
+class AuditLog(db.Model):
+    __tablename__ = "audit_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    action = db.Column(db.String(255))  # e.g., "Uploaded file", "Viewed result"
+    details = db.Column(db.Text)  # extra info (filename, analysis id, etc.)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship
+    user = db.relationship("User", backref="audit_logs")
