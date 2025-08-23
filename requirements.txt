@@ -1,3 +1,4 @@
+# === CORE FLASK DEPENDENCIES ===
 Flask==2.3.3
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
@@ -6,13 +7,13 @@ python-dotenv==1.0.0
 argon2-cffi==21.3.0
 gunicorn==21.2.0
 psycopg2-binary==2.9.9
-Pillow==9.5.0          # ✅ downgraded for build stability
+Pillow==9.5.0         # downgraded for build stability
 filetype==1.2.0
 opencv-python==4.8.0.74
 requests==2.31.0
-pytesseract==0.3.13    # ✅ updated to a valid version for OCR
+pytesseract==0.3.13   # updated to a valid version for OCR
 
-# === OPTIONAL / HEAVY ML & AI (install later if needed) ===
+# === OPTIONAL / HEAVY ML & AI DEPENDENCIES (INSTALL LATER IF NEEDED) ===
 # torch
 # torchvision
 # ultralytics==8.0.130
