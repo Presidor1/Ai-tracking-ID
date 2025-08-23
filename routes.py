@@ -1,7 +1,13 @@
 import os
 import filetype
-from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_user, logout_user, login_required, current_user
+from flask import (
+    Blueprint, render_template, request, redirect,
+    url_for, flash
+)
+from flask_login import (
+    login_user, logout_user, login_required,
+    current_user, UserMixin
+)
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
@@ -33,7 +39,7 @@ def allowed_file(filename):
 # Core Routes
 # ==========================
 @routes.route("/", methods=["GET"])
-def home():
+def index():
     """Landing page with upload form."""
     return render_template("index.html", title="Home")
 
@@ -43,13 +49,13 @@ def upload_file():
     """Handle file uploads and run analysis pipeline."""
     if "file" not in request.files:
         flash("❌ No file uploaded", "danger")
-        return redirect(url_for("routes.home"))
+        return redirect(url_for("routes.index"))
 
     file = request.files["file"]
 
     if file.filename == "":
         flash("❌ Empty filename", "danger")
-        return redirect(url_for("routes.home"))
+        return redirect(url_for("routes.index"))
 
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
@@ -105,7 +111,7 @@ def upload_file():
             "objects": ", ".join(set(detected_objects)) if detected_objects else "None",
             "image_url": f"/{filepath}",
             "preview_url": preview_url,
-            "lat": 9.05785,   # Default coords (can be replaced by AI inference later)
+            "lat": 9.05785,   # Default coords (AI inference will replace later)
             "lng": 7.49508
         }
 
@@ -113,7 +119,7 @@ def upload_file():
 
     else:
         flash("❌ Invalid file type. Please upload an image.", "danger")
-        return redirect(url_for("routes.home"))
+        return redirect(url_for("routes.index"))
 
 
 # ==========================
@@ -131,7 +137,7 @@ def about():
 
 
 # ==========================
-# Authentication (placeholder)
+# Authentication (basic stubs)
 # ==========================
 @routes.route("/login", methods=["GET", "POST"])
 def login():
@@ -139,9 +145,15 @@ def login():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # TODO: Replace with real DB check
-        flash("⚠️ Login system not implemented yet.", "warning")
-        return redirect(url_for("routes.login"))
+        # Placeholder: replace with DB check
+        if email == "test@test.com" and password == "password":
+            fake_user = UserMixin()
+            fake_user.id = 1
+            login_user(fake_user)
+            flash("✅ Logged in successfully.", "success")
+            return redirect(url_for("routes.dashboard"))
+        else:
+            flash("❌ Invalid credentials.", "danger")
 
     return render_template("login.html", title="Login")
 
@@ -152,8 +164,8 @@ def register():
         email = request.form.get("email")
         password = request.form.get("password")
 
-        # TODO: Replace with real DB save
-        flash("⚠️ Registration not implemented yet.", "warning")
+        # Placeholder: save to DB later
+        flash("⚠️ Registration system not implemented yet.", "warning")
         return redirect(url_for("routes.register"))
 
     return render_template("register.html", title="Register")
@@ -164,4 +176,13 @@ def register():
 def logout():
     logout_user()
     flash("✅ Logged out successfully.", "info")
-    return redirect(url_for("routes.home"))
+    return redirect(url_for("routes.index"))
+
+
+@routes.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email")
+        flash(f"📧 If {email} exists, a reset link was sent.", "info")
+        return redirect(url_for("routes.login"))
+    return render_template("forgot_password.html", title="Forgot Password")
