@@ -9,14 +9,15 @@ gunicorn==21.2.0
 psycopg2-binary==2.9.9
 Pillow==9.5.0         # downgraded for build stability
 filetype==1.2.0
-opencv-python==4.8.0.74
+opencv-python-headless==4.8.0.74  # switched to headless for Docker
 requests==2.31.0
 pytesseract==0.3.13   # updated to a valid version for OCR
 
-# === OPTIONAL / HEAVY ML & AI DEPENDENCIES (INSTALL LATER IF NEEDED) ===
-# torch==2.3.0         # CPU-only version, install separately if needed
-# torchvision
-# ultralytics==8.0.130
+# === ML & AI DEPENDENCIES ===
+torch==2.3.1          # required by ultralytics
+torchvision==0.18.1
+torchaudio==2.3.1
+ultralytics==8.1.118
 # faiss-cpu==1.7.4
 # transformers==4.35.2
 # sentence-transformers==2.2.2
