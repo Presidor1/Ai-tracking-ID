@@ -3,7 +3,7 @@ import filetype
 from datetime import datetime
 from flask import (
     Blueprint, render_template, request, redirect,
-    url_for, flash
+    url_for, flash, send_from_directory
 )
 from flask_login import (
     login_user, logout_user, login_required,
@@ -14,7 +14,7 @@ from PIL import Image
 import pytesseract
 from ultralytics import YOLO
 
-from models import db, User, Analysis  # import your models
+from models import db, User, Analysis  # import models
 
 routes = Blueprint("routes", __name__)
 
@@ -27,8 +27,9 @@ ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULTS_FOLDER, exist_ok=True)
 
-# Load YOLOv8 model (tiny version for speed)
+# Load YOLOv8 model (tiny for speed)
 yolo_model = YOLO("yolov8n.pt")
+
 
 # ==========================
 # Utility Functions
@@ -224,3 +225,29 @@ def forgot_password():
         flash(f"📧 If {email} exists, a reset link was sent.", "info")
         return redirect(url_for("routes.login"))
     return render_template("forgot_password.html", title="Forgot Password")
+
+
+# ==========================
+# Error Handlers
+# ==========================
+@routes.app_errorhandler(404)
+def not_found(e):
+    return render_template("error.html", title="404", message="Page not found"), 404
+
+
+@routes.app_errorhandler(500)
+def server_error(e):
+    return render_template("error.html", title="500", message="Internal server error"), 500
+
+
+# ==========================
+# Static File Serving (uploads/results)
+# ==========================
+@routes.route("/uploads/<path:filename>")
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
+
+@routes.route("/results_files/<path:filename>")
+def result_file(filename):
+    return send_from_directory(RESULTS_FOLDER, filename)
