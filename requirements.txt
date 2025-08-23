@@ -11,17 +11,15 @@ Pillow==9.5.0         # downgraded for build stability
 filetype==1.2.0
 opencv-python==4.8.0.74
 requests==2.31.0
-pytesseract==0.3.13   # updated to a valid version for OCR
+pytesseract==0.3.13   # updated for OCR
 
-# === ML & AI DEPENDENCIES ===
-torch==2.3.0+cpu       # CPU version for deployment (change if GPU)
-torchvision==0.18.1+cpu
-ultralytics==8.0.130
-faiss-cpu==1.7.4
-transformers==4.35.2
-sentence-transformers==2.2.2
-
-# === OPTIONAL GIS / OTHER DEPENDENCIES ===
-geopandas==0.12.2
-rasterio
-boto3
+# === OPTIONAL / HEAVY ML & AI DEPENDENCIES (INSTALL LATER IF NEEDED) ===
+# torch==2.3.0         # CPU or GPU version, remove +cpu suffix
+# torchvision           # optional, for vision models
+# ultralytics==8.0.130
+# faiss-cpu==1.7.4
+# transformers==4.35.2
+# sentence-transformers==2.2.2
+# geopandas==0.12.2
+# rasterio
+# boto3
