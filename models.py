@@ -28,6 +28,9 @@ class User(UserMixin, db.Model):
     def is_admin(self):
         return self.role == "admin"
 
+    def __repr__(self):
+        return f"<User {self.email} ({self.role})>"
+
 
 # =========================
 # Analysis Model
@@ -54,6 +57,9 @@ class Analysis(db.Model):
     # Relationship
     user = db.relationship("User", backref="analyses")
 
+    def __repr__(self):
+        return f"<Analysis {self.filename} ({self.status}, {self.confidence:.2f})>"
+
 
 # =========================
 # Audit Log Model
@@ -69,3 +75,6 @@ class AuditLog(db.Model):
 
     # Relationship
     user = db.relationship("User", backref="audit_logs")
+
+    def __repr__(self):
+        return f"<AuditLog User={self.user_id} Action={self.action}>"
