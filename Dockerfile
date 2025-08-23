@@ -1,27 +1,36 @@
-# Use Python 3.11 slim image
+# Use official Python slim image
 FROM python:3.11-slim
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Set environment variables to prevent Python buffering issues
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# === INSTALL SYSTEM DEPENDENCIES ===
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     tesseract-ocr \
     libtesseract-dev \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
+# Copy requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Install YOLO (ultralytics) and torch
-RUN pip install --no-cache-dir ultralytics torch torchvision
+# Install Python dependencies
+RUN pip install --upgrade pip setuptools wheel
+RUN pip install -r requirements.txt
 
-# Copy the rest of the app
+# Copy application code
 COPY . .
 
-# Expose port (Render default)
+# Expose port for Flask
 EXPOSE 5000
 
-# Start the app with Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+# Command to run the app with Gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app", "--workers", "4"]
