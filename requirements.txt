@@ -6,6 +6,9 @@ torch==2.3.1
 torchvision==0.18.1
 torchaudio==2.3.1
 
-# Other dependencies you might have
+# Other dependencies
 opencv-python
 pillow
+
+# Add Flask for web app
+Flask==2.3.3
