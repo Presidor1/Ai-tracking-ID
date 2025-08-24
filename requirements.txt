@@ -5,7 +5,8 @@ ultralytics==8.0.118
 torch==2.3.1
 torchvision==0.18.1
 torchaudio==2.3.1
-opencv-python==4.12.0.88
+# Use headless OpenCV for servers (no GUI deps needed)
+opencv-python-headless==4.12.0.88
 pillow==11.3.0
 numpy==2.2.6
 scipy==1.16.1
