@@ -1,37 +1,34 @@
-# === Base Image ===
+# ===== Base Image =====
 FROM python:3.11-slim
 
-# === System Dependencies ===
-RUN apt-get update && apt-get install -y \
+# ===== Environment Variables =====
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+
+# ===== System Dependencies =====
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
     tesseract-ocr \
     libtesseract-dev \
-    build-essential \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# === Set Working Directory ===
+# ===== Working Directory =====
 WORKDIR /app
 
-# === Copy & Install Python Dependencies ===
+# ===== Copy & Install Python Dependencies =====
 COPY requirements.txt .
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# === Copy Application Code ===
+# ===== Copy App Code =====
 COPY . .
 
-# === Ensure Upload Folders Exist ===
-RUN mkdir -p static/uploads static/results
-
-# === Set Environment Variables ===
-ENV PYTHONUNBUFFERED=1 \
-    FLASK_ENV=production \
-    PORT=5000
-
-# === Expose Port ===
+# ===== Expose Port =====
 EXPOSE 5000
 
-# === Start the App with Gunicorn ===
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", \
-     "--workers", "2", \
-     "--threads", "2", \
-     "--timeout", "120", \
-     "app:app"]
+# ===== Default Command =====
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "wsgi:app"]
