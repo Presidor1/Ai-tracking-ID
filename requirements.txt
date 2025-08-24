@@ -1,4 +1,4 @@
-# === CORE FLASK DEPENDENCIES ===
+# ===== CORE FLASK DEPENDENCIES =====
 Flask==2.3.3
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
@@ -7,23 +7,17 @@ python-dotenv==1.0.0
 argon2-cffi==21.3.0
 gunicorn==21.2.0
 psycopg2-binary==2.9.9
-
-# === IMAGE & OCR PROCESSING ===
-Pillow==9.5.0                 # stable for Docker
+Pillow==9.5.0
 filetype==1.2.0
 opencv-python-headless==4.8.0.74
+requests==2.31.0
 pytesseract==0.3.13
 
-# === ML & AI DEPENDENCIES ===
-torch==2.3.1+cpu              # CPU-only version to reduce image size
-torchvision==0.18.1+cpu
-torchaudio==2.3.1+cpu
-ultralytics==8.1.118          # YOLOv8
+# ===== ML & AI DEPENDENCIES (CPU-ONLY) =====
+torch==2.3.1+cpu --index-url https://download.pytorch.org/whl/cpu
+torchvision==0.18.1+cpu --index-url https://download.pytorch.org/whl/cpu
+torchaudio==2.3.1+cpu --index-url https://download.pytorch.org/whl/cpu
+ultralytics==8.1.118
 
-# === HTTP & REQUEST HANDLING ===
-requests==2.31.0
-
-# === OPTIONAL SYSTEM SUPPORT (NOT PYTHON PACKAGES) ===
-# Note: Install these in Dockerfile for OpenCV / Torch support
-# libgl1-mesa-glx
-# libglib2.0-0
+# ===== OPTIONAL / SYSTEM SUPPORT PACKAGES =====
+# For Docker slim images: libgl1, libglib2.0-0 (installed in Dockerfile)
