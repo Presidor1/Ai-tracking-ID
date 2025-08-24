@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install system dependencies (Tesseract, OpenCV deps, etc.)
+# Install system dependencies (Tesseract + OpenCV deps)
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     libtesseract-dev \
@@ -18,5 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Run Gunicorn with only 1 worker (to save memory)
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "-w", "1", "--timeout", "120", "app:app"]
+# Expose port (important for Render/Railway to detect service)
+EXPOSE 8080
+
+# Run Gunicorn
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "app:app"]
