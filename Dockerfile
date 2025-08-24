@@ -1,36 +1,22 @@
-# Use official slim Python image
 FROM python:3.11-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    DEBIAN_FRONTEND=noninteractive
-
-# Install system dependencies (Tesseract + build tools)
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     libtesseract-dev \
-    ffmpeg \
-    libsm6 \
-    libxext6 \
-    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
 
-# Copy dependency list first (for Docker caching)
+# Copy and install dependencies
 COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --upgrade pip \
-    && pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .
 
-# Expose port (Railway/Heroku looks at $PORT)
+# Expose port (important for Railway)
 EXPOSE 8080
 
 # Run Gunicorn
