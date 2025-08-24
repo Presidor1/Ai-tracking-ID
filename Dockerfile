@@ -18,8 +18,9 @@ WORKDIR /app
 # ===== Copy Only Requirements First for Caching =====
 COPY requirements.txt .
 
-# ===== Install Python Dependencies in /install =====
+# ===== Install CPU-only PyTorch explicitly =====
 RUN pip install --upgrade pip \
+    && pip install torch==2.3.1+cpu torchvision==0.18.1+cpu torchaudio==2.3.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu \
     && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ===== Stage 2: Runtime Stage =====
