@@ -9,6 +9,7 @@ torchaudio==2.3.1
 # Other dependencies
 opencv-python
 pillow
+filetype
 
 # Web framework
 flask
