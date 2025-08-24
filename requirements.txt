@@ -1,19 +1,11 @@
-# Core AI / Vision
-ultralytics==8.0.118   # Compatible stable release
+# Core dependencies
+ultralytics==8.0.118
 
-# Torch (CPU version, matches Python 3.11)
-torch==2.3.1+cpu
-torchvision==0.18.1+cpu
-torchaudio==2.3.1+cpu
+# Torch CPU version compatible with Python 3.11
+torch==2.3.1
+torchvision==0.18.1
+torchaudio==2.3.1
 
-# OCR / Tesseract Python wrapper
-pytesseract==0.3.11
-
-# Image handling
-Pillow==10.0.1
-opencv-python-headless==4.8.1.78
-
-# Other utilities
-numpy==1.26.0
-scipy==1.11.1
-matplotlib==3.8.1
+# Other dependencies you might have
+opencv-python
+pillow
