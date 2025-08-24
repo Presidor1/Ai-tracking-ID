@@ -7,7 +7,7 @@ python-dotenv==1.0.0
 argon2-cffi==21.3.0
 gunicorn==21.2.0
 psycopg2-binary==2.9.9
-Pillow==9.5.0          # stable for Docker build
+Pillow==9.5.0                # stable for Docker build
 filetype==1.2.0
 opencv-python-headless==4.8.0.74
 requests==2.31.0
@@ -17,4 +17,10 @@ pytesseract==0.3.13
 torch==2.3.1
 torchvision==0.18.1
 torchaudio==2.3.1
-ultralytics==8.1.118    # YOLOv8
+ultralytics==8.1.118          # YOLOv8
+
+# === OPTIONAL / SYSTEM SUPPORT PACKAGES ===
+# These can help prevent errors with OpenCV/Torch in slim Docker images
+# (not strictly Python packages, but note for Dockerfile)
+# libgl1-mesa-glx
+# libglib2.0-0
