@@ -1,10 +1,11 @@
 import os
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, request, jsonify
 from config import Config
 from routes import routes
 from models import db, User
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from ultralytics import YOLO  # Import YOLO for lazy loading
 
 # =========================
 # Initialize Flask App
@@ -32,7 +33,7 @@ migrate = Migrate(app, db)
 # Flask-Login Manager
 # =========================
 login_manager = LoginManager()
-login_manager.login_view = "routes.login"  # Redirect to login if user is not authenticated
+login_manager.login_view = "routes.login"
 login_manager.init_app(app)
 
 @login_manager.user_loader
@@ -56,6 +57,30 @@ app.register_blueprint(routes)
 def index():
     """Redirect users to the homepage (upload form)."""
     return redirect(url_for("routes.home"))
+
+# =========================
+# ML Model Lazy Loader
+# =========================
+def get_yolo_model():
+    """Lazy-load YOLO model to save memory on startup."""
+    if not hasattr(get_yolo_model, "model"):
+        app.logger.info("Loading YOLO model...")
+        get_yolo_model.model = YOLO("yolov8n.pt")  # Use small YOLOv8-nano for memory efficiency
+    return get_yolo_model.model
+
+# =========================
+# Example Detection Endpoint
+# =========================
+@app.route("/detect", methods=["POST"])
+def detect_objects():
+    """Run object detection on uploaded image."""
+    model = get_yolo_model()  # load model only when needed
+    if "image" not in request.files:
+        return jsonify({"error": "No image file provided"}), 400
+
+    file = request.files["image"]
+    results = model(file.read())
+    return jsonify(results.pandas().xyxy[0].to_dict(orient="records"))
 
 # =========================
 # Error Handlers
