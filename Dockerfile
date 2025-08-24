@@ -8,14 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     tesseract-ocr \
     libtesseract-dev \
-    libgl1 \
+    libgl1-mesa-glx \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # ===== Set Working Directory =====
 WORKDIR /app
 
-# ===== Copy Requirements =====
+# ===== Copy Only Requirements First for Caching =====
 COPY requirements.txt .
 
 # ===== Install Python Dependencies in /install =====
@@ -29,7 +29,7 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
     libtesseract-dev \
-    libgl1 \
+    libgl1-mesa-glx \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
