@@ -44,3 +44,11 @@ charset-normalizer==3.4.3
 idna==3.10
 urllib3==2.5.0
 certifi==2025.8.3
+
+# OCR
+pytesseract==0.3.13
+
+# Database + Auth
+flask-sqlalchemy==3.1.1
+flask-migrate==4.0.7
+flask-login==0.6.3
