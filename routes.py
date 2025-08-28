@@ -1,175 +1,129 @@
 import os
-import uuid
-from datetime import datetime
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_from_directory
-from flask_login import login_user, logout_user, login_required, current_user
+import io
+from flask import Blueprint, request, jsonify
+from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
+from datetime import datetime
+from models import db, Analysis, AuditLog
 import pytesseract
-from ultralytics import YOLO
-import cv2
+from PIL import Image
 
-from models import db, User, Analysis, AuditLog
-
-# =========================
 # Blueprint
-# =========================
 routes = Blueprint("routes", __name__)
 
-# Load YOLO model once (improves performance)
-yolo_model = YOLO("yolov8n.pt")  # can be swapped for custom model
-
-
-# =========================
-# Helpers
-# =========================
-def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
-    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
+# =====================
+# Helper Functions
+# =====================
 
 def log_action(user_id, action, details=""):
-    """Save an audit log entry"""
-    audit = AuditLog(user_id=user_id, action=action, details=details)
-    db.session.add(audit)
+    """Save user actions to audit logs"""
+    log = AuditLog(user_id=user_id, action=action, details=details)
+    db.session.add(log)
     db.session.commit()
 
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in {"png", "jpg", "jpeg"}
 
-# =========================
+
+# =====================
 # Routes
-# =========================
-@routes.route("/")
-def index():
-    return render_template("index.html", title="Home")
+# =====================
 
-
-@routes.route("/about")
-def about():
-    return render_template("about.html", title="About")
-
-
-@routes.route("/dashboard")
-@login_required
-def dashboard():
-    history = Analysis.query.filter_by(user_id=current_user.id).order_by(Analysis.created_at.desc()).all()
-    return render_template("dashboard.html", title="Dashboard", history=history)
-
-
-@routes.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        name = request.form["name"]
-        email = request.form["email"]
-        password = request.form["password"]
-
-        if User.query.filter_by(email=email).first():
-            flash("❌ Email already registered.", "danger")
-            return redirect(url_for("routes.register"))
-
-        user = User(name=name, email=email)
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
-        flash("✅ Registration successful. Please login.", "success")
-        return redirect(url_for("routes.login"))
-
-    return render_template("register.html", title="Register")
-
-
-@routes.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-
-        user = User.query.filter_by(email=email).first()
-        if user and user.check_password(password):
-            login_user(user)
-            flash("✅ Login successful!", "success")
-            log_action(user.id, "Login", f"User {email} logged in")
-            return redirect(url_for("routes.dashboard"))
-        else:
-            flash("❌ Invalid email or password.", "danger")
-
-    return render_template("login.html", title="Login")
-
-
-@routes.route("/logout")
-@login_required
-def logout():
-    log_action(current_user.id, "Logout", "User logged out")
-    logout_user()
-    flash("✅ Logged out successfully.", "info")
-    return redirect(url_for("routes.index"))
+@routes.route("/ping", methods=["GET"])
+def ping():
+    """Health check endpoint"""
+    return jsonify({"status": "ok", "time": datetime.utcnow().isoformat()}), 200
 
 
 @routes.route("/upload", methods=["POST"])
 @login_required
-def upload():
+def upload_file():
+    """Handle file uploads for analysis"""
     if "file" not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files["file"]
-
     if file.filename == "":
         return jsonify({"error": "Empty filename"}), 400
 
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        unique_id = str(uuid.uuid4())
-        save_name = f"{unique_id}_{filename}"
-        save_path = os.path.join(current_app.static_folder, "uploads", save_name)
-        file.save(save_path)
+    if not allowed_file(file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
 
-        # Run OCR with pytesseract
-        try:
-            image = cv2.imread(save_path)
-            text = pytesseract.image_to_string(image)
-        except Exception as e:
-            text = f"OCR Error: {e}"
+    filename = secure_filename(file.filename)
+    file_path = os.path.join("uploads", filename)
+    os.makedirs("uploads", exist_ok=True)
+    file.save(file_path)
 
-        # Run YOLO detection
-        try:
-            results = yolo_model(save_path)
-            detected_objects = [result.names[int(cls)] for r in results for cls in r.boxes.cls]
-        except Exception as e:
-            detected_objects = [f"YOLO Error: {e}"]
+    # Create analysis record
+    analysis = Analysis(
+        user_id=current_user.id,
+        filename=filename,
+        file_type=filename.rsplit(".", 1)[1].lower(),
+        status="pending"
+    )
+    db.session.add(analysis)
+    db.session.commit()
 
-        # Save analysis to DB
-        analysis = Analysis(
-            user_id=current_user.id,
-            filename=save_name,
-            file_type=file.mimetype,
-            dimensions=f"{image.shape[1]}x{image.shape[0]}" if image is not None else "N/A",
-            extracted_text=text,
-            detected_objects=", ".join(detected_objects),
-            image_url=f"/static/uploads/{save_name}",
-            preview_url=f"/static/uploads/{save_name}",
-            status="completed",
-            confidence=0.85,  # fake placeholder, could parse from YOLO results
-            method_used="YOLO+OCR",
-        )
-        db.session.add(analysis)
+    log_action(current_user.id, "Uploaded file", f"File: {filename}")
+
+    return jsonify({"message": "File uploaded successfully", "analysis_id": analysis.id})
+
+
+@routes.route("/analyze/<int:analysis_id>", methods=["POST"])
+@login_required
+def analyze_file(analysis_id):
+    """Run OCR + YOLO detection on uploaded file"""
+    analysis = Analysis.query.get_or_404(analysis_id)
+    file_path = os.path.join("uploads", analysis.filename)
+
+    try:
+        # OCR
+        img = Image.open(file_path)
+        extracted_text = pytesseract.image_to_string(img)
+
+        # YOLO (lazy import – avoids startup slowdown)
+        from ultralytics import YOLO
+        model = YOLO("yolov8n.pt")  # use nano model for speed
+        results = model(file_path)
+
+        detected_objects = [r.names[int(cls)] for r in results for cls in r.boxes.cls]
+
+        # Save results
+        analysis.extracted_text = extracted_text.strip()
+        analysis.detected_objects = ", ".join(set(detected_objects))
+        analysis.status = "completed"
+        analysis.confidence = float(results[0].boxes.conf.mean()) if results[0].boxes.conf.numel() > 0 else 0.0
+        analysis.method_used = "YOLOv8+OCR"
         db.session.commit()
 
-        log_action(current_user.id, "Uploaded file", f"File={save_name}")
+        log_action(current_user.id, "Analyzed file", f"Analysis ID: {analysis.id}")
 
         return jsonify({
-            "message": "✅ File uploaded and analyzed",
-            "filename": save_name,
-            "text": text,
-            "objects": detected_objects,
-            "image_url": analysis.image_url
+            "message": "Analysis completed",
+            "text": analysis.extracted_text,
+            "objects": analysis.detected_objects,
+            "confidence": analysis.confidence
         })
 
-    return jsonify({"error": "Invalid file format"}), 400
+    except Exception as e:
+        analysis.status = "failed"
+        db.session.commit()
+        log_action(current_user.id, "Analysis failed", str(e))
+        return jsonify({"error": str(e)}), 500
 
 
-@routes.route("/result/<int:id>")
+@routes.route("/results/<int:analysis_id>", methods=["GET"])
 @login_required
-def view_result(id):
-    analysis = Analysis.query.get_or_404(id)
-    if analysis.user_id != current_user.id and not current_user.is_admin():
-        flash("❌ Unauthorized access.", "danger")
-        return redirect(url_for("routes.dashboard"))
+def get_results(analysis_id):
+    """Fetch results of analysis"""
+    analysis = Analysis.query.get_or_404(analysis_id)
 
-    return render_template("result.html", title="Analysis Result", analysis=analysis)
+    return jsonify({
+        "id": analysis.id,
+        "filename": analysis.filename,
+        "text": analysis.extracted_text,
+        "objects": analysis.detected_objects,
+        "confidence": analysis.confidence,
+        "status": analysis.status,
+        "created_at": analysis.created_at.isoformat()
+    })
